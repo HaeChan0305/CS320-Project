@@ -4,7 +4,6 @@
   </h1>
   <p>
     <b>KAIST CS320: Programming Language (Spring 2024)</b><br>
-    Project
   </p>
 </div>
 
