@@ -9,22 +9,22 @@ object Implementation extends Template {
   // Add, Mul
   def IntVop1(op: (BigInt, BigInt) => BigInt): (Value, Value) => IntV = (_, _) match {
     case (IntV(x), IntV(y)) => IntV(op(x, y))
-    case (x, y) => error(s"not both numbers: $x, $y")
+    case (x, y) => error(s"not both numbers")
   }
 
   // Div, Mod
   def IntVop2(op: (BigInt, BigInt) => BigInt): (Value, Value) => IntV = (_, _) match {
     case (IntV(x), IntV(y)) => {
-      if (y == 0) error(s"divided by zero: $y")
+      if (y == 0) error(s"divided by zero")
       IntV(op(x, y))
     }
-    case (x, y) => error(s"not both numbers: $x, $y")
+    case (x, y) => error(s"not both numbers")
   }
 
   // Eq, Lt
   def IntVop3(op: (BigInt, BigInt) => Boolean): (Value, Value) => BooleanV = (_, _) match {
     case (IntV(x), IntV(y)) => BooleanV(op(x, y))
-    case (x, y) => error(s"not both numbers: $x, $y")
+    case (x, y) => error(s"not both numbers")
   }
 
   val IntVAdd = IntVop1(_ + _)
@@ -36,7 +36,7 @@ object Implementation extends Template {
 
   def helper(expr: Expr, env: Env, hand: Option[Handler], k: Cont): Value = expr match{
     // variable
-    case Id(name: String) => k(env.getOrElse(name, error(s"free identifier: $name")))
+    case Id(name: String) => k(env.getOrElse(name, error(s"free identifier")))
     
     // integer
     case IntE(value: BigInt) => k(IntV(value))
@@ -86,7 +86,7 @@ object Implementation extends Template {
         cv match{
           case BooleanV(true) => helper(trueBranch, env, hand, k)
           case BooleanV(false) => helper(falseBranch, env, hand, k)
-          case v => error(s"not a boolean: $v")
+          case v => error(s"not a boolean")
         }
       )
   
@@ -111,10 +111,10 @@ object Implementation extends Template {
         tv match{
           case TupleV(values) => {
             val len: Int = values.length
-            if (index > len) error(s"Index out of range: $index")
+            if (index > len) error(s"Index out of range")
             k(values(index - 1))
           }
-          case v => error(s"not a tuple: $v")
+          case v => error(s"not a tuple")
         }
       )
 
@@ -128,7 +128,7 @@ object Implementation extends Template {
           tv match {
             case NilV => k(ConsV(hv, tv))
             case ConsV(_, _) => k(ConsV(hv, tv))
-            case v => error(s"not a NilV or ConsV: $v")
+            case v => error(s"not a NilV or ConsV")
           }
         )
       )
@@ -139,7 +139,7 @@ object Implementation extends Template {
         ev match{
           case NilV => k(BooleanV(true))
           case ConsV(_, _) => k(BooleanV(false))
-          case v => error(s"not a NilV or ConsV: $v")
+          case v => error(s"not a NilV or ConsV")
         }
       )
 
@@ -148,7 +148,7 @@ object Implementation extends Template {
       helper(expression, env, hand, ev => 
         ev match{
           case ConsV(head, _) => k(head)
-          case v => error(s"not a nonempty list: $v")
+          case v => error(s"not a nonempty list")
         }
       )
     
@@ -157,7 +157,7 @@ object Implementation extends Template {
       helper(expression, env, hand, ev =>
         ev match{
           case ConsV(_, tail) => k(tail)
-          case v => error(s"not a nonempty list: $v")
+          case v => error(s"not a nonempty list")
         }
       ) 
 
@@ -195,14 +195,14 @@ object Implementation extends Template {
         else{
           fv match{
             case CloV(parameters, body, fenv) => {
-              if (parameters.length != avals.length) error(s"wrong arguments: $avals, $parameters")
+              if (parameters.length != avals.length) error(s"wrong arguments")
               helper(body, fenv ++ (parameters zip avals), hand, k)
             }
             case ContV(kv) => {
-              if (avals.length != 1) error(s"number of arugments of ContV should be 1: $kv, $avals")
+              if (avals.length != 1) error(s"number of arugments of ContV should be 1")
               kv(avals.head)
             }
-            case v => error(s"not a CloV or ContV: $v")
+            case v => error(s"not a CloV or ContV")
           }
         }
       }
@@ -241,7 +241,7 @@ object Implementation extends Template {
             case FunctionT => k(BooleanV(true))
             case _ => k(BooleanV(false))
           }
-          case v => error(s"undefined value: $v")
+          case v => error(s"undefined value")
         }
       )
     
@@ -253,14 +253,14 @@ object Implementation extends Template {
             helper(expr_h, env_h, handler_h, ev_h =>
               ev_h match{
                 case CloV(parameters, body, fenv) => {
-                  if (parameters.length != 1) error(s"number of parameters of CloV should be 1: $ev_h")
+                  if (parameters.length != 1) error(s"number of parameters of CloV should be 1")
                   helper(body, fenv + (parameters.head -> ev), handler_h, k_h)
                 }
                 case ContV(kv) => k_h(ev)
-                case v => error(s"It it not a CloV or ContV: $v")
+                case v => error(s"It it not a CloV or ContV")
               }
             )
-          case None => error(s"There is no handelr: $hand")
+          case None => error(s"There is no handelr")
         }
       )
     
@@ -271,7 +271,7 @@ object Implementation extends Template {
 
 
     // otherwise
-    case v => error(s"undefined expression: $v")
+    case v => error(s"undefined expression")
   }
 
   def interp(expr: Expr): Value = helper(expr, Map(), None, x => x)
