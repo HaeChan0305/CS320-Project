@@ -256,14 +256,13 @@ object Implementation extends Template {
                   if (parameters.length != 1) error(s"number of parameters of CloV should be 1")
                   helper(body, fenv + (parameters.head -> ev), handler_h, k_h)
                 }
-                case ContV(kv) => k_h(ev)
-                case v => error(s"It it not a CloV or ContV")
+                case ContV(kv) => kv(ev)
+                case _ => error(s"It it not a CloV or ContV")
               }
             )
           case None => error(s"There is no handelr")
         }
       )
-    
     
     // handler registration
     case Try(expression: Expr, handler: Expr) => 
