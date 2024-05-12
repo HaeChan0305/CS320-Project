@@ -91,8 +91,19 @@ object Implementation extends Template {
       )
   
     // tuple
-    case TupleE(expressions: List[Expr]) => 
-      k(TupleV(expressions.map(helper(_, env, hand, x => x))))
+    case TupleE(expressions: List[Expr]) => {
+      def recurExp(expressions: List[Expr], env: Env, hand: Option[Handler], k: Cont, evals: List[Value]): Value = {
+        if (! expressions.isEmpty) {
+          helper(expressions.head, env, hand, ev => 
+            recurExp(expressions.tail, env, hand, k, evals :+ ev)
+          )
+        }
+        else {
+          k(TupleV(evals))
+        }
+      }
+      recurExp(expressions, env, hand, k, List.empty[Value])
+    }
     
     // projection
     case Proj(expression: Expr, index: Int) =>
@@ -174,36 +185,29 @@ object Implementation extends Template {
     }
 
     // function application
-    case App(function: Expr, arguments: List[Expr]) => 
-      helper(function, env, hand, fv => {
-          val avals = arguments.map(helper(_, env, hand, x => x))
-          fv match {
+    case App(function: Expr, arguments: List[Expr]) => {
+      def recurArg(fv: Any, arguments: List[Expr], env: Env, hand: Option[Handler], k: Cont, avals: List[Value]): Value = {
+        if (!arguments.isEmpty){
+          helper(arguments.head, env, hand, av =>
+            recurArg(fv, arguments.tail, env, hand, k, avals :+ av)
+          )
+        }
+        else{
+          fv match{
             case CloV(parameters, body, fenv) => {
-              if (parameters.length != avals.length) error(s"wrong arguments: $parameters, $avals")
+              if (parameters.length != avals.length) error(s"wrong arguments: $avals, $parameters")
               helper(body, fenv ++ (parameters zip avals), hand, k)
             }
-            case ContV(kv) =>{
+            case ContV(kv) => {
               if (avals.length != 1) error(s"number of arugments of ContV should be 1: $kv, $avals")
               kv(avals.head)
             }
             case v => error(s"not a CloV or ContV: $v")
           }
         }
-      )
-
-    // // function application
-    // case App(function: Expr, arguments: List[Expr]) => {
-    //   def recurArg(arguments: List[Expr], env: Env, hand: Option[Handler], k: Cont, args: List[Value]): List[Value] => {
-    //     if (arguments.lenght != 1){
-    //       helper(arguments.head, env, hand, av =>
-    //         recurArg(arguments.tail, env, hand, k, args :+ av)
-    //       )
-    //     }
-    //     else{
-
-    //     }
-    //   }
-    // }
+      }
+      helper(function, env, hand, fv => recurArg(fv, arguments, env, hand, k, List.empty[Value]))
+    }
 
     // type test
     case Test(expression: Expr, typ: Type) => 
